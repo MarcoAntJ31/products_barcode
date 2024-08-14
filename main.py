@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Body, File, UploadFile
 from fastapi.responses import HTMLResponse
+from fastapi.middleware.cors import CORSMiddleware
 from config.database import Session, engine, Base
 from models.product import Product
 
@@ -10,6 +11,14 @@ import numpy as np
 app = FastAPI()
 app.title = "Mi aplicación con FastAPI"
 app.version = "0.0.1"
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 Base.metadata.create_all(bind=engine)
 
@@ -40,7 +49,7 @@ async def get_product_by_barcode(file: UploadFile = File(...)):
     session.close()
     return product
 
-async def read_code_from_file(file: UploadFile) -> np.ndarray:
+async def read_code_from_file(file: UploadFile) -> str:
     # Leer la imagen recibida
     contents = await file.read()
     np_arr = np.frombuffer(contents, np.uint8)
@@ -50,10 +59,4 @@ async def read_code_from_file(file: UploadFile) -> np.ndarray:
     decoded_objects = decode(img)
     codes = [obj.data.decode('utf-8') for obj in decoded_objects]
 
-    return codes[0]
-
-
-
-
-
-
+    return codes[0] if codes else ''
